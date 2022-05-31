@@ -1,0 +1,52 @@
+---
+- name: Set facts
+  set_fact:
+    user_name: ruuvitag
+    group_name: ruuvitag
+    home_dir: "/home/ruuvitag"
+
+- name: Install Python
+  become: yes
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python3.9
+    - python3.9-venv
+    - bluetooth
+    - bluez
+    - blueman
+    - bluez-hcidump
+
+- name: Install PIP
+  become: yes
+  ansible.builtin.shell: |
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    python3.9 get-pip.py
+
+- name: Ensure user "{{user_name}}" exists
+  ansible.builtin.include_role:
+    name: user_creator
+  vars:
+    name: "{{user_name}}"
+    user_groups: "{{group_name}}"
+    home: "{{home_dir}}"
+
+- name: Install ruuvitag_sensor's requirements
+  become_user: "{{user_name}}"
+  ansible.builtin.shell: |
+    pip install --user ruuvitag_sensor
+    pip install --user git+https://github.com/TheCellule/python-bleson
+
+- name: Install ruuvitag_sensor
+  become: yes
+  ansible.builtin.copy:
+    src: "read_ruuvitag_data.py"
+    dest: "{{home_dir}}/read_ruuvitag_data.py"
+    owner: "{{user_name}}"
+    group: "{{group_name}}"
+    mode: 0770
+
+# TODO
+# export RUUVI_BLE_ADAPTER="Bleson"
+# Start script

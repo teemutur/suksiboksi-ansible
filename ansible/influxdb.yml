@@ -1,0 +1,6 @@
+---
+- name: Setup InfluxDB
+  hosts:
+    - monitor
+  roles:
+    - influxdb

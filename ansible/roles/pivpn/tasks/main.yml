@@ -1,0 +1,85 @@
+---
+- name: Set facts
+  set_fact:
+    user_name: pivpn
+    group_name: pivpn
+    home_dir: "/home/pivpn"
+    sudoers_file: /etc/sudoers.d/ansible
+
+- name: Ensure user "{{user_name}}" exists
+  ansible.builtin.include_role:
+    name: user_creator
+  vars:
+    name: "{{user_name}}"
+    user_groups: "{{group_name}}"
+    home: "{{home_dir}}"
+
+- name: Download PiVPN install.sh
+  become: yes
+  ansible.builtin.get_url:
+    url: https://install.pivpn.io
+    dest: "{{home_dir}}/install.sh"
+    owner: "{{user_name}}"
+    group: "{{group_name}}"
+    mode: "770"
+
+- name: Copy options.conf to remote
+  become: yes
+  ansible.builtin.copy:
+    dest: "{{home_dir}}/options.conf"
+    owner: "{{user_name}}"
+    group: "{{group_name}}"
+    mode: "0640"
+    content: |
+      USING_UFW=0
+      IPv4dev={{pivpn.ipv4_dev}}
+      IPv4addr{{pivpn.ipv4_addr}}
+      IPv4gw={{pivpn.ipv4_gw}}
+      install_user={{user_name}}
+      install_home={{home_dir}}
+      VPN=wireguard
+      pivpnPORT={{pivpn.pivpn_port}}
+      pivpnDNS1={{pivpn.pivpn_dns1}}
+      pivpnDNS2={{pivpn.pivpn_dns2}}
+      pivpnHOST={{pivpn.pivpn_host}}
+      INPUT_CHAIN_EDITED=0
+      FORWARD_CHAIN_EDITED=1
+      pivpnPROTO=udp
+      subnetClass=24
+      ALLOWED_IPS="{{pivpn.allowed_ips}}"
+      UNATTUPG=1
+      INSTALLED_PACKAGES=(iptables-persistent unattended-upgrades)
+
+- name: Ensure "{{sudoers_file}}" exists
+  become: yes
+  copy:
+    content: ""
+    dest: "{{sudoers_file}}"
+    force: no
+    group: "root"
+    owner: "root"
+    mode: "0440"
+
+- name: Allow user "{{user_name}}" to use sudo without password temporarily
+  become: yes
+  lineinfile:
+    dest: "{{sudoers_file}}"
+    state: present
+    regexp: "^{{user_name}}"
+    line: "{{user_name}} ALL=(ALL) NOPASSWD:ALL"
+    validate: "visudo -cf %s"
+
+- name: Install PiVPN
+  become: yes
+  become_user: "{{user_name}}"
+  ansible.builtin.shell: |
+    bash -c "./install.sh --unattended options.conf 2>&1 >> ./pivpn_debug.log"
+  args:
+    chdir: "{{home_dir}}"
+    executable: /bin/bash
+
+- name: Remove permissions from user "{{user_name}}" to use sudo without password
+  become: yes
+  ansible.builtin.file:
+    path: "{{sudoers_file}}"
+    state: absent

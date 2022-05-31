@@ -1,0 +1,6 @@
+---
+- name: Setup common utilities
+  hosts:
+    - all
+  roles:
+    - common

@@ -1,0 +1,7 @@
+---
+- name: Create docker user
+  ansible.builtin.include_role:
+    name: user_creator
+  vars:
+    user_groups: "{{[user_group, 'docker']}}"
+    home: "{{home_dir}}"

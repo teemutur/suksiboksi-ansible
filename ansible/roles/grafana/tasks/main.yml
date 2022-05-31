@@ -1,0 +1,46 @@
+---
+- name: Set facts
+  set_fact:
+    user_name: grafana
+    group_name: grafana
+    home_dir: "/home/grafana"
+    repo_folder: "grafana"
+
+- name: Ensure user with correct settings exists
+  ansible.builtin.include_role:
+    name: docker_enabled_user_creator
+  vars:
+    name: "{{user_name}}"
+    user_group: "{{group_name}}"
+    home: "{{home_dir}}"
+
+- name: Install Grafana
+  ansible.builtin.include_role:
+    name: git_installer
+  vars:
+    git_repo_url: "{{git_repositories.grafana}}"
+    git_repo_name: "{{repo_folder}}"
+    git_repo_destination: "{{home_dir}}"
+    git_repo_destination_owner: "{{user_name}}"
+    git_repo_destination_group: "{{group_name}}"
+
+- name: Create .env file
+  no_log: yes
+  become: yes
+  ansible.builtin.copy:
+    dest: "{{home_dir}}/{{repo_folder}}/.env"
+    owner: "{{user_name}}"
+    group: "{{group_name}}"
+    mode: "0640"
+    content: |
+      GF_SERVER_DOMAIN={{caddy.grafana.duckdns_domain}}
+      DOCKER_NETWORK={{docker.network}}
+
+- name: Start Grafana
+  become: yes
+  become_user: "{{user_name}}"
+  ansible.builtin.shell: |
+    docker-compose up -d
+  args:
+    chdir: "{{home_dir}}/{{repo_folder}}"
+    executable: /bin/bash

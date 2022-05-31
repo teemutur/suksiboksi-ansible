@@ -1,0 +1,34 @@
+---
+- name: "Hardening: disable password authentication"
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication "
+    line: PasswordAuthentication no
+
+- name: "Hardening: disable challenge response authentication"
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^ChallengeResponseAuthentication "
+    line: ChallengeResponseAuthentication no
+
+- name: "Hardening: disable PAM"
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^UsePAM "
+    line: UsePAM no
+
+- name: "Hardening: set allowed users to login"
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^AllowUsers "
+    line: "AllowUsers {{ssh.allowed_users}}"
+
+- name: Reload SSH
+  become: yes
+  service:
+    name: sshd
+    state: reloaded

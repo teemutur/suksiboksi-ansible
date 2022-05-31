@@ -1,0 +1,54 @@
+---
+- name: Set facts
+  set_fact:
+    user_name: caddy
+    group_name: caddy
+    home_dir: "/home/caddy"
+    repo_folder: "caddy"
+
+- name: Ensure user with correct settings exists
+  ansible.builtin.include_role:
+    name: docker_enabled_user_creator
+  vars:
+    name: "{{user_name}}"
+    user_group: "{{group_name}}"
+    home: "{{home_dir}}"
+
+- name: Install caddy
+  ansible.builtin.include_role:
+    name: git_installer
+  vars:
+    git_repo_url: "{{git_repositories.caddy}}"
+    git_repo_name: "{{repo_folder}}"
+    git_repo_destination: "{{home_dir}}"
+    git_repo_destination_owner: "{{user_name}}"
+    git_repo_destination_group: "{{group_name}}"
+
+- name: Create .env
+  no_log: yes
+  become: yes
+  ansible.builtin.copy:
+    dest: "{{home_dir}}/{{repo_folder}}/.env"
+    owner: "{{user_name}}"
+    group: "{{group_name}}"
+    mode: "0640"
+    content: |
+      GRAFANA_DUCKDNS_TOKEN={{caddy.grafana.duckdns_token}}
+      GRAFANA_DUCKDNS_DOMAIN={{caddy.grafana.duckdns_domain}}
+      GRAFANA_TARGET_SERVICE={{docker.grafana.service_address}}
+      PIHOLE_DOMAIN={{caddy.pihole.domain}}
+      PIHOLE_TARGET_SERVICE={{docker.pihole.service_address}}
+      INFLUXDB_TARGET_SERVICE={{docker.influxdb.service_address}}
+      LOCALHOST_NAME={{caddy.localhost_name}}
+      LOCALHOST_IP={{caddy.localhost_ip}}
+      LOCALHOST_IP={{caddy.localhost_ip}}
+      DOCKER_NETWORK={{docker.network}}
+      EMAIL={{caddy.email}}
+
+- name: Start caddy
+  become: yes
+  become_user: "{{user_name}}"
+  ansible.builtin.shell: |
+    docker-compose up -d
+  args:
+    chdir: "{{home_dir}}/{{repo_folder}}"

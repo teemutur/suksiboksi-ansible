@@ -1,0 +1,61 @@
+---
+- name: Ensure group "docker" exists
+  become: yes
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Install Docker dependencies
+  become: yes
+  ansible.builtin.apt:
+    name: "{{item}}"
+    state: present
+    update_cache: yes
+  loop:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg-agent
+    - lsb-release
+
+- name: Add Docker's official GPG key
+  become: yes
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  become: yes
+  apt_repository:
+    repo: "deb https://download.docker.com/linux/{{OS_ID}} {{OS_VERSION_CODENAME}} stable"
+    state: present
+
+- name: Install Docker
+  become: yes
+  ansible.builtin.apt:
+    name: "{{item}}"
+    state: latest
+    update_cache: yes
+  loop:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+
+- name: Start Docker service and set it to start on boot
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Install docker-compose
+  become: yes
+  get_url:
+    url: https://github.com/docker/compose/releases/download/v2.2.2/docker-compose-linux-x86_64
+    dest: /usr/local/bin/docker-compose
+    mode: u+x,g+x,o+x
+
+- name: Create network (ignores errors; check carefully if this task returns an error)
+  become: yes
+  ansible.builtin.shell: |
+    docker network create {{docker.network}}
+  ignore_errors: yes

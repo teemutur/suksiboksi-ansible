@@ -1,0 +1,6 @@
+---
+- name: Setup Caddy
+  hosts:
+    - web
+  roles:
+    - caddy

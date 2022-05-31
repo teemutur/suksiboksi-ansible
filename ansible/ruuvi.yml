@@ -1,0 +1,6 @@
+---
+- name: Setup ruuvi utilities
+  hosts:
+    - monitor
+  roles:
+    - ruuvi

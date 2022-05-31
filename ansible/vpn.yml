@@ -1,0 +1,6 @@
+---
+- name: Setup VPN server
+  hosts:
+    - vpn-server
+  roles:
+    - pivpn

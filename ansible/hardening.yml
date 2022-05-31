@@ -1,0 +1,7 @@
+---
+- name: Harden the systems
+  hosts:
+    - all
+  roles:
+    - sshd
+    - ufw

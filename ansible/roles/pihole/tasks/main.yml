@@ -1,0 +1,60 @@
+---
+- name: Set facts
+  set_fact:
+    user_name: pi-hole
+    group_name: pi-hole
+    home_dir: "/home/pi-hole"
+    repo_folder: "pi-hole"
+
+- name: Ensure user with correct settings exists
+  ansible.builtin.include_role:
+    name: docker_enabled_user_creator
+  vars:
+    name: "{{user_name}}"
+    user_group: "{{group_name}}"
+    home: "{{home_dir}}"
+
+- name: Install pi-hole
+  ansible.builtin.include_role:
+    name: git_installer
+  vars:
+    git_repo_url: "{{git_repositories.pihole}}"
+    git_repo_name: "{{repo_folder}}"
+    git_repo_destination: "{{home_dir}}"
+    git_repo_destination_owner: "{{user_name}}"
+    git_repo_destination_group: "{{group_name}}"
+
+- name: Create .env
+  no_log: yes
+  become: yes
+  ansible.builtin.copy:
+    dest: "{{home_dir}}/{{repo_folder}}/.env"
+    owner: "{{user_name}}"
+    group: "{{group_name}}"
+    mode: "0640"
+    content: |
+      PIHOLEPASSWORD={{pihole.admin_password}}
+      DOCKER_NETWORK={{docker.network}}
+
+- name: Disable DNS stub resolver
+  become: yes
+  ansible.builtin.shell: |
+    sudo sed -r -i.orig 's/#?DNSStubListener=yes/DNSStubListener=no/g' /etc/systemd/resolved.conf
+    sudo sh -c 'rm /etc/resolv.conf && ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf'
+    systemctl restart systemd-resolved
+
+- name: Add private domains to unbound configuration
+  become: yes
+  ansible.builtin.lineinfile:
+    path: "{{home_dir}}/{{repo_folder}}/unbound-pihole.conf"
+    line: "    private-domain {{item}}"
+  with_items: "{{pihole.private_domains}}"
+  when: pihole.private_domains is defined
+
+- name: Start pi-hole
+  become: yes
+  become_user: "{{user_name}}"
+  ansible.builtin.shell: |
+    docker-compose up -d
+  args:
+    chdir: "{{home_dir}}/{{repo_folder}}"

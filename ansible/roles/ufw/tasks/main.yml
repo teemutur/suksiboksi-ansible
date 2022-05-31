@@ -1,0 +1,42 @@
+---
+# Inspired by https://github.com/kontza/siurvahti
+
+- name: Ensure ufw is installed
+  become: yes
+  ansible.builtin.apt:
+    name: ufw
+    state: latest
+
+- name: Disable ufw during setup
+  become: yes
+  ansible.builtin.ufw:
+    state: disabled
+
+- name: Allow accesses from our local network to this host
+  become: yes
+  ansible.builtin.ufw:
+    rule: allow
+    src: "{{item.src}}"
+    proto: "{{item.proto}}"
+    port: "{{item.port}}"
+    state: enabled
+  loop:
+    - { src: 192.168.1.0/16, proto: tcp, port: 22 }
+    - { src: 10.0.0.0/8, proto: tcp, port: 22 }
+    - { src: 192.168.1.0/16, proto: tcp, port: 80 }
+    - { src: 10.0.0.0/8, proto: tcp, port: 80 }
+    - { src: 192.168.1.0/16, proto: tcp, port: 443 }
+    - { src: 10.0.0.0/8, proto: tcp, port: 443 }
+    - { src: 192.168.1.0/16, proto: tcp, port: 53 }
+    - { src: 10.0.0.0/8, proto: tcp, port: 53 }
+    - { src: 192.168.1.0/16, proto: tcp, port: 67 }
+    - { src: 10.0.0.0/8, proto: tcp, port: 67 }
+    - { src: 192.168.1.0/16, proto: udp, port: 53 }
+    - { src: 10.0.0.0/8, proto: udp, port: 53 }
+    - { src: 192.168.1.0/16, proto: udp, port: 67 }
+    - { src: 10.0.0.0/8, proto: udp, port: 67 }
+
+- name: Enable ufw
+  become: yes
+  ansible.builtin.ufw:
+    state: enabled

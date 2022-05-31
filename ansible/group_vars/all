@@ -1,0 +1,9 @@
+OS_ID: "ubuntu"
+OS_VERSION_CODENAME: "focal"
+ansible_controller: 127.0.0.1
+
+git_repositories:
+    caddy: git@github.com:teemutur/suksiboksi-caddy.git
+    grafana: git@github.com:teemutur/suksiboksi-grafana.git
+    influxdb: git@github.com:teemutur/suksiboksi-influxdb.git
+    pihole: git@github.com:teemutur/suksiboksi-pihole.git

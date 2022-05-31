@@ -1,0 +1,27 @@
+all:
+  hosts:
+    vg-suksiboksi-rpi3:
+    vg-suksiboksi-rpi4:
+  children:
+    pihole:
+      hosts:
+        vg-suksiboksi-rpi3:
+    monitor:
+      hosts:
+        vg-suksiboksi-rpi4:
+    web:
+      hosts:
+        vg-suksiboksi-rpi4:
+    temperature-logger:
+      hosts:
+        vg-suksiboksi-rpi4:
+    vpn-server:
+      hosts:
+        vg-suksiboksi-rpi4:
+    dockerable:
+      hosts:
+        vg-suksiboksi-rpi3:
+        vg-suksiboksi-rpi4:
+    password-manager:
+      hosts:
+        vg-suksiboksi-rpi4:
