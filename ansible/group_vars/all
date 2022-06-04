@@ -1,5 +1,9 @@
 OS_ID: "ubuntu"
-OS_VERSION_CODENAME: "focal"
+# TODO override codename and architectures in staging
+OS_VERSION_CODENAME: "jammy"
+OS_ARCHITECTURE: "arm64"
+BUILD_ARCHITECTURE: "aarch64"
+DOCKER_COMPOSE_VERSION: "v2.6.0"
 ansible_controller: 127.0.0.1
 
 git_repositories:
@@ -7,3 +11,4 @@ git_repositories:
     grafana: git@github.com:teemutur/suksiboksi-grafana.git
     influxdb: git@github.com:teemutur/suksiboksi-influxdb.git
     pihole: git@github.com:teemutur/suksiboksi-pihole.git
+    ruuvi: git@github.com:teemutur/suksiboksi-ruuvitag-sensor.git

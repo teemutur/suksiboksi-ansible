@@ -47,7 +47,7 @@
   become: yes
   ansible.builtin.lineinfile:
     path: "{{home_dir}}/{{repo_folder}}/unbound-pihole.conf"
-    line: "    private-domain {{item}}"
+    line: "    private-domain: {{item}}"
   with_items: "{{pihole.private_domains}}"
   when: pihole.private_domains is defined
 

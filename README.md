@@ -2,6 +2,8 @@
 
 This repository contains Ansible scripts for setupping my home servers. For developing said scripts it also contains configuration for Vagrant.
 
+NOTE: this is a work in progress. All roles may not have been fully tested.
+
 ### How do I get set up?
 
 Pre-requirements and assumptions:
@@ -87,6 +89,10 @@ docker:
     service_address: influxdb:8086
 ssh:
   allowed_users: vagrant
+ruuvi:
+  external_configuration:
+    AA_2C_6A_1E_59_3D: "Balcony"
+    CC_2C_6A_1E_59_3D: "Living room"
 ```
 
 #### Ansible setup structure

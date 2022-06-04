@@ -4,6 +4,7 @@
     user_name: ruuvitag
     group_name: ruuvitag
     home_dir: "/home/ruuvitag"
+    repo_folder: "ruuvitag-sensor"
 
 - name: Install Python
   become: yes
@@ -11,8 +12,8 @@
     name: "{{ item }}"
     state: present
   with_items:
-    - python3.9
-    - python3.9-venv
+    - python3.10
+    - python3.10-venv
     - bluetooth
     - bluez
     - blueman
@@ -22,7 +23,7 @@
   become: yes
   ansible.builtin.shell: |
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-    python3.9 get-pip.py
+    python3 get-pip.py
 
 - name: Ensure user "{{user_name}}" exists
   ansible.builtin.include_role:
@@ -32,21 +33,75 @@
     user_groups: "{{group_name}}"
     home: "{{home_dir}}"
 
-- name: Install ruuvitag_sensor's requirements
+- name: Install ruuvitag-sensor
+  ansible.builtin.include_role:
+    name: git_installer
+  vars:
+    git_repo_url: "{{git_repositories.ruuvi}}"
+    git_repo_name: "{{repo_folder}}"
+    git_repo_destination: "{{home_dir}}"
+    git_repo_destination_owner: "{{user_name}}"
+    git_repo_destination_group: "{{group_name}}"
+
+- name: Stop systemd unit
+  become: yes
+  ansible.builtin.systemd:
+    state: stopped
+    name: ruuvitag_reader.timer
+    enabled: yes
+
+- name: Install requirements
+  become: yes
   become_user: "{{user_name}}"
   ansible.builtin.shell: |
-    pip install --user ruuvitag_sensor
-    pip install --user git+https://github.com/TheCellule/python-bleson
+    pip install --user --upgrade -r requirements.txt
+  args:
+    chdir: "{{home_dir}}/{{repo_folder}}"
 
-- name: Install ruuvitag_sensor
+- name: Create config.yaml
   become: yes
   ansible.builtin.copy:
-    src: "read_ruuvitag_data.py"
-    dest: "{{home_dir}}/read_ruuvitag_data.py"
+    dest: "{{home_dir}}/{{repo_folder}}/config.yaml"
     owner: "{{user_name}}"
     group: "{{group_name}}"
     mode: 0770
+    content: "{{ruuvi.external_configuration | to_nice_yaml}}"
 
-# TODO
-# export RUUVI_BLE_ADAPTER="Bleson"
-# Start script
+- name: Create systemd service unit
+  become: yes
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/ruuvitag_reader.service
+    content: |
+      [Unit]
+      Description=Service reading data from Ruuvitags
+      After=multi-user.target
+      [Service]
+      Type=oneshot
+      Restart=no
+      ExecStart=/usr/bin/python3.10 {{home_dir}}/{{repo_folder}}/read_ruuvitag_data.py
+      User={{user_name}}
+      CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+      AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
+      Environment="RUUVI_BLE_ADAPTER="Bleson""
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Create systemd timer unit
+  become: yes
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/ruuvitag_reader.timer
+    content: |
+      [Unit]
+      Description=Start Ruuvitag reader service
+      [Timer]
+      OnCalendar=*:0/1
+      [Install]
+      WantedBy=timers.target
+
+- name: Start systemd unit timer
+  become: yes
+  ansible.builtin.systemd:
+    daemon_reload: yes
+    state: restarted
+    name: ruuvitag_reader.timer
+    enabled: yes
