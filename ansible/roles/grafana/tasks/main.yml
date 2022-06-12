@@ -34,8 +34,23 @@
     mode: "0640"
     content: |
       GF_SERVER_DOMAIN={{caddy.grafana.duckdns_domain}}
+      GF_SMTP_ENABLED: true
+      GF_SMTP_HOST: smtp.gmail.com:587
+      GF_SMTP_USER: {{mail.sender}}
+      GF_SMTP_PASSWORD: {{mail.password}}
+      GF_SMTP_FROM_ADDRESS: {{mail.sender}}
+      GF_SMTP_FROM_NAME: "Grafana at {{inventory_hostname}}"
       DOCKER_NETWORK={{docker.network}}
 
+- name: Stop Grafana
+  become: yes
+  become_user: "{{user_name}}"
+  ansible.builtin.shell: |
+    docker-compose down
+  args:
+    chdir: "{{home_dir}}/{{repo_folder}}"
+    executable: /bin/bash
+    
 - name: Start Grafana
   become: yes
   become_user: "{{user_name}}"

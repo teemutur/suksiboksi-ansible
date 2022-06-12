@@ -8,3 +8,12 @@
     - acl
     - gpg
     - sqlite3
+    - fish
+    - bash-completion
+    - lnav
+
+- name: "Set fish as the default shell for {{ansible_user}}"
+  become: yes
+  ansible.builtin.user:
+    shell: /usr/bin/fish
+    name: "{{ansible_user}}"

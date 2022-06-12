@@ -1,0 +1,40 @@
+---
+# Adapted from https://github.com/kontza/server_setup_helpers/blob/main/server_setup_helpers/roles/ssmtp/tasks/main.yml
+
+- name: Install packages for mail
+  become: yes
+  ansible.builtin.package:
+    name: "{{item}}"
+    state: latest
+  loop:
+    - ssmtp
+    - mailutils
+
+- name: Install ssmtp config
+  become: yes
+  ansible.builtin.copy:
+    dest: /etc/ssmtp/ssmtp.conf
+    content: |
+      root={{mail.recipient}}
+      mailhub=smtp.gmail.com:587
+      rewriteDomain=gmail.com
+      hostname={{inventory_hostname}}
+      AuthUser={{mail.sender}}
+      AuthPass={{mail.password}}
+      UseSTARTTLS=Yes
+
+- name: Install local username aliases for ssmtp
+  become: yes
+  ansible.builtin.copy:
+    dest: /etc/ssmtp/revaliases
+    content: |
+      root:{{mail.sender}}:smtp.gmail.com:587
+      {{ansible_user}}:{{mail.sender}}:smtp.gmail.com:587
+
+- name: Set full usernames
+  become: yes
+  ansible.builtin.command:
+    cmd: chfn -f '{{item}} at {{inventory_hostname}}' {{item}}
+  loop:
+    - root
+    - "{{ansible_user}}"

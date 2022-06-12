@@ -24,6 +24,13 @@
   become: yes
   shell: |
     telegraf --output-filter false --input-filter false config > /etc/telegraf/telegraf.conf
+  tags:
+    - never
+
+- name: Create config
+  become: yes
+  shell: |
+    telegraf config > telegraf.conf
 
 # TODO Add wanted inputs and outputs
 
@@ -33,5 +40,3 @@
     name: telegraf
     state: restarted
     enabled: yes
-  tags:
-    - never # disabled for now
