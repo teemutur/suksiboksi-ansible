@@ -49,6 +49,7 @@
     state: stopped
     name: ruuvitag_reader.timer
     enabled: yes
+  ignore_errors: yes
 
 - name: Install requirements
   become: yes

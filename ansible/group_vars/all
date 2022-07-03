@@ -1,8 +1,6 @@
 OS_ID: "ubuntu"
-# TODO override codename and architectures in staging
 OS_VERSION_CODENAME: "jammy"
-OS_ARCHITECTURE: "arm64"
-BUILD_ARCHITECTURE: "aarch64"
+BUILD_ARCHITECTURE: "x86_64"
 DOCKER_COMPOSE_VERSION: "v2.6.0"
 ansible_controller: 127.0.0.1
 
